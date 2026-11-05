@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NSynth — interface physique</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-home" href="index.html">NSynth — interface physique</a>
+    <a href="index.html" aria-current="page">Accueil</a>
+    <a href="cablage.html">Câblage</a>
+    <a href="logiciel.html">Logiciel</a>
+    <a href="simulation.html">Simulation</a>
+  </div>
+</nav>
+
+<main>
+  <h1>Une interface physique pour un synthétiseur</h1>
+
+  <p class="lead">Un instrument qui fait glisser le timbre d’une guitare vers celui d’une flûte pendant qu’on joue. Ce projet en construit l’interface : les boutons qu’on tourne, les écrans qu’on lit, la lumière qui dit où l’on en est.</p>
+
+  <ul class="doors">
+    <li><a class="door" href="cablage.html">
+      <b>Câblage</b>
+      <span>Les composants, leurs liaisons, et pourquoi chacune a été choisie ainsi.</span>
+    </a></li>
+    <li><a class="door" href="logiciel.html">
+      <b>Logiciel</b>
+      <span>Comment un geste devient un nombre, puis de la lumière et du son.</span>
+    </a></li>
+    <li><a class="door" href="simulation.html">
+      <b>Simulation</b>
+      <span>Manipuler l’interface dans le navigateur, sans rien installer.</span>
+    </a></li>
+  </ul>
+
+  <h2>En détail</h2>
+
+  <div class="sections">
+
+    <details>
+      <summary>Le projet</summary>
+      <div class="details-body">
+        <p>Permettre à un musicien de choisir des instruments et de faire glisser progressivement le timbre de l’un vers l’autre pendant qu’il joue, par une interface physique qu’il manipule sans quitter son instrument des yeux.</p>
+
+        <h3>Ce que le projet couvre</h3>
+        <p>Le développement électronique de l’interface homme-machine : captation du geste, retour d’information, et liaisons avec l’ordinateur embarqué.</p>
+
+        <h3>Ce que le projet ne couvre pas</h3>
+        <p>La synthèse audio elle-même. Elle est traitée comme une boîte noire qui reçoit des paramètres et produit du son.</p>
+
+        <h3>L’utilisateur</h3>
+        <p>Un musicien. Le prototype sert aussi à découvrir ses besoins réels : certaines fonctions ont été révélées par la manipulation, et d’autres le seront encore.</p>
+
+        <h3>Contexte</h3>
+        <p>Travaux d’étudiant à l’ISIB, pour les cours de prototypage et d’interface homme-machine. Le sujet s’inspire d’Open NSynth Super, un instrument expérimental publié par Google Creative Lab en 2018.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Cahier des charges</summary>
+      <div class="details-body">
+        <p>Chaque ligne énonce ce que le système doit permettre, jamais comment il s’y prend. Chacune porte une vérification : si le test est impossible à imaginer, la ligne est mal écrite.</p>
+
+        <h3>Sélection d’instrument</h3>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th></th><th>Fonction</th><th>Vérification</th></tr></thead>
+            <tbody>
+              <tr><td>S1</td><td>Parcourir la liste des instruments d’un slot, dans les deux sens</td><td>le nom affiché change à chaque pas</td></tr>
+              <tr><td>S2</td><td>Atteindre n’importe quel instrument depuis n’importe quel autre</td><td>la liste reboucle aux extrémités</td></tr>
+              <tr><td>S3</td><td>Opérer chaque slot indépendamment</td><td>agir sur un slot ne modifie pas l’autre</td></tr>
+              <tr><td>S4</td><td>Savoir à tout instant quel instrument est sélectionné</td><td>le nom est lisible sans action préalable</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Réglage du mélange</h3>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th></th><th>Fonction</th><th>Vérification</th></tr></thead>
+            <tbody>
+              <tr><td>M1</td><td>Faire varier le poids d’un instrument de 0 à 100 %</td><td>la valeur suit le geste dans les deux sens</td></tr>
+              <tr><td>M2</td><td>Rester dans les limites</td><td>la valeur ne dépasse pas et ne reboucle pas</td></tr>
+              <tr><td>M3</td><td>Parcourir toute la course sans lâcher le bouton</td><td>deux tours au maximum</td></tr>
+              <tr><td>M4</td><td>Faire glisser le timbre pendant le jeu</td><td>le changement s’entend comme continu, sans palier</td></tr>
+              <tr><td>M5</td><td>Répartir le mélange entre trois sources</td><td>la somme des poids vaut toujours 100 %</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Retour d’information</h3>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th></th><th>Fonction</th><th>Vérification</th></tr></thead>
+            <tbody>
+              <tr><td>R1</td><td>Lire l’état du mélange sans toucher à rien</td><td>l’affichage correspond au réglage à tout instant</td></tr>
+              <tr><td>R2</td><td>Percevoir la progression comme continue</td><td>aucun saut visible entre deux positions voisines</td></tr>
+              <tr><td>R3</td><td>Lire le nom de l’instrument de chaque slot</td><td>le nom est affiché en clair, par slot</td></tr>
+              <tr><td>R4</td><td>Voir l’effet d’un geste immédiatement</td><td>le retour suit la main sans décalage perceptible</td></tr>
+              <tr><td>R5</td><td>Lire l’affichage sans regarder le bouton</td><td>l’information est portée par la lumière, pas par la position du bouton</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Fonctions de système</h3>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th></th><th>Fonction</th><th>Vérification</th></tr></thead>
+            <tbody>
+              <tr><td>Y1</td><td>Être utilisable dès la mise sous tension</td><td>un état cohérent est affiché au démarrage</td></tr>
+              <tr><td>Y2</td><td>Recevoir et émettre le son</td><td>mêmes entrées et sorties audio que l’original</td></tr>
+              <tr><td>Y3</td><td>Dialoguer en MIDI et par USB</td><td>un clavier externe pilote l’instrument</td></tr>
+              <tr><td>Y4</td><td>Accepter une pédale d’expression</td><td>une pédale branchée modifie un paramètre</td></tr>
+              <tr><td>Y5</td><td>Régler le volume de sortie</td><td>un contrôle dédié agit sur le niveau</td></tr>
+              <tr><td>Y6</td><td>Permettre de remplacer une partie sans refaire les autres</td><td>un composant d’entrée ou de sortie se change sans toucher au reste</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Deux conséquences qui méritent d’être lues ensemble</h3>
+        <p><strong>R1 et R5</strong> — un bouton rotatif sans fin n’a pas de position lisible. L’information doit donc être portée ailleurs, et le retour visuel devient obligatoire plutôt que confortable.</p>
+        <p><strong>Y1</strong> — les commandes ne gardent aucune mémoire de leur position, donc le système doit décider lui-même de son état initial. C’est une conséquence directe de M2, et la trace la plus nette de la manière dont une contrainte matérielle remonte jusqu’au besoin.</p>
+
+        <h3>Contraintes imposées</h3>
+        <ul>
+          <li>Ordinateur embarqué : Raspberry Pi 4</li>
+          <li>Commande par boutons rotatifs uniquement, aucun contrôle tactile</li>
+          <li>Un afficheur par slot pour le nom de l’instrument</li>
+          <li>Une surface lumineuse pour la proportion du mélange</li>
+          <li>Entrée pédale d’expression à ajouter par rapport à l’original</li>
+        </ul>
+      </div>
+    </details>
+
+    <details>
+      <summary>Ce qu’est NSynth<span class="hint">pour qui ne connaît pas</span></summary>
+      <div class="details-body">
+        <p>NSynth, pour <em>neural synthesizer</em>, est un algorithme d’apprentissage automatique conçu par Google. Il sert à fabriquer un son dont le <strong>timbre</strong> se situe entre deux instruments existants.</p>
+
+        <p>Le timbre est ce qui fait qu’une guitare et un piano jouant la même note au même volume ne sonnent pas pareil. C’est la couleur du son, indépendamment de sa hauteur et de son intensité.</p>
+
+        <h3>Mélanger deux sons, ou mélanger deux descriptions</h3>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th></th><th>Mélange ordinaire</th><th>NSynth</th></tr></thead>
+            <tbody>
+              <tr><th>Opération</th><td>additionner deux ondes</td><td>interpoler deux descriptions du timbre</td></tr>
+              <tr><th>À mi-chemin</th><td>les deux instruments jouent ensemble</td><td><strong>un seul</strong> son, de timbre intermédiaire</td></tr>
+              <tr><th>Ce que l’oreille fait</th><td>sépare les deux sources</td><td>entend un instrument unique</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Encoder, interpoler, décoder</h3>
+        <p>Le réseau analyse un son et en extrait seize nombres qui décrivent son timbre. On calcule ensuite les valeurs intermédiaires entre les seize nombres de deux instruments, puis on redescend vers du son.</p>
+        <p>Une image : encoder, c’est goûter un plat et en écrire la recette. Interpoler, c’est écrire une recette à mi-chemin entre deux recettes. Décoder, c’est cuisiner cette nouvelle recette. On obtient un plat que personne n’a jamais préparé.</p>
+
+        <h3>Le point qui surprend</h3>
+        <p>Le réseau de neurones <strong>ne tourne pas sur l’instrument</strong>. Il tourne en amont, sur un serveur équipé de cartes graphiques, pendant des dizaines d’heures, et produit des milliers de fichiers audio.</p>
+        <p>L’instrument, lui, ne fait que choisir le bon fichier et le jouer. C’est un échantillonneur ordinaire, d’une technologie courante depuis les années 1980. Ce sont ses fichiers qui sont extraordinaires.</p>
+
+        <h3>Pour ce projet</h3>
+        <p>Les sons interpolés d’Open NSynth Super ne sont plus distribués depuis l’archivage du dépôt en août 2025. Le banc d’essai utilise donc des enregistrements d’instruments réels, ce qui donne un mélange et non un morphing. Cela ne change rien au travail d’interface.</p>
+      </div>
+    </details>
+
+  </div>
+</main>
+
+<footer>
+  Travaux d’étudiant, ISIB — cours de prototypage et d’interface homme-machine.
+</footer>
+
+</body>
+</html>

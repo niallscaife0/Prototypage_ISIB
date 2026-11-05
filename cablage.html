@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Câblage — NSynth</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-home" href="index.html">NSynth — interface physique</a>
+    <a href="index.html">Accueil</a>
+    <a href="cablage.html" aria-current="page">Câblage</a>
+    <a href="logiciel.html">Logiciel</a>
+    <a href="simulation.html">Simulation</a>
+  </div>
+</nav>
+
+<main>
+  <h1>Câblage</h1>
+
+  <p class="lead">Une dizaine de composants reliés à un petit ordinateur. Ce qui est intéressant n’est pas leur nombre, mais le fait que les fils ne se ressemblent pas : trois façons différentes de transporter une information, chacune choisie pour ce que cette information exige.</p>
+
+  <div class="overview">
+    <h2>Vue d’ensemble</h2>
+
+<pre><code>        ENC1              ENC2              ENC3
+   instrument 1      instrument 2      poids du mélange
+        │                 │                 │
+        └─────────────────┼─────────────────┘
+                          │   GPIO dédiés, interruption
+                          ▼
+              ┌───────────────────────┐
+              │    Raspberry Pi 4     │
+              │  maître du bus,       │
+              │  mémoire de l'état    │
+              └───────────┬───────────┘
+                          │   bus I2C partagé — SDA, SCL
+        ┌─────────────────┼─────────────────┐
+        ▼                 ▼                 ▼
+   MCP23017          OLED slot 1       OLED slot 2
+   expandeur · 0x20   SH1106 · 0x3C     SH1106 · 0x3D
+        │
+        │   10 sorties parallèles
+        ▼
+   10 LED vertes
+   330 Ω par voie</code></pre>
+
+    <h3>Trois natures de liaison</h3>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th></th><th>Encodeurs</th><th>Bus I2C</th><th>Sorties de l’expandeur</th></tr></thead>
+        <tbody>
+          <tr><th>Topologie</th><td>dédiée, point à point</td><td>partagée, en parallèle</td><td>dédiée, une par LED</td></tr>
+          <tr><th>Identification</th><td>par la broche</td><td>par l’adresse</td><td>par la broche</td></tr>
+          <tr><th>Protocole</th><td>aucun, niveaux bruts</td><td>trame I2C</td><td>aucun, niveaux bruts</td></tr>
+          <tr><th>Sensibilité au temps</th><td>critique</td><td>tolérante</td><td>aucune</td></tr>
+          <tr><th>Nature de l’information</th><td>séquence fugace</td><td>messages</td><td>état persistant</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Les masses sont communes à tous les blocs, sans exception. Un GPIO compare le potentiel de sa broche à sa propre masse : sans référence partagée, aucune lecture n’a de sens.</p>
+  </div>
+
+  <h2>En détail</h2>
+
+  <div class="sections">
+
+    <details id="pi-expandeur">
+      <summary>Pi vers expandeur</summary>
+      <div class="details-body">
+        <p>Le Pi est le maître du bus, le MCP23017 un esclave parmi d’autres. Quatre fils établissent la liaison, quatre autres configurent la puce.</p>
+
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Rôle</th><th>Pi</th><th>MCP23017</th></tr></thead>
+            <tbody>
+              <tr><td>Données I2C</td><td>broche 3 (GPIO 2, SDA)</td><td>broche 13 (SDA)</td></tr>
+              <tr><td>Horloge I2C</td><td>broche 5 (GPIO 3, SCL)</td><td>broche 12 (SCL)</td></tr>
+              <tr><td>Alimentation</td><td>broche 1 (3,3 V)</td><td>broche 9 (VDD)</td></tr>
+              <tr><td>Masse</td><td>broche 9 (GND)</td><td>broche 10 (VSS)</td></tr>
+              <tr><td>Adresse</td><td>—</td><td>broches 15, 16, 17 à la masse</td></tr>
+              <tr><td>Réinitialisation</td><td>—</td><td>broche 18 au 3,3 V</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>Les six lignes sont nécessaires. Une broche d’adresse laissée en l’air ou un RESET flottant suffisent à rendre la puce invisible sur le bus, sans qu’aucun message d’erreur ne l’indique.</p>
+
+        <h3>Trois points qui ne se devinent pas</h3>
+        <ul>
+          <li><strong>Pas de résistances de tirage à ajouter.</strong> Le Raspberry Pi en porte déjà sur SDA et SCL. En ajouter d’autres abaisserait la résistance totale du bus.</li>
+          <li><strong>Les masses doivent être communes</strong> entre le Pi, l’expandeur et la plaque à LED.</li>
+          <li><strong>L’adresse se câble, elle ne se programme pas.</strong> Les trois broches à la masse donnent 0x20 ; les relier au 3,3 V donnerait 0x21 à 0x27, ce qui permettrait huit expandeurs sur le même bus.</li>
+        </ul>
+
+        <h3>Vérification</h3>
+        <p><code>i2cdetect -y 1</code> doit afficher <code>20</code>. Si rien n’apparaît, le défaut est dans l’une de ces six lignes, jamais dans le code.</p>
+      </div>
+    </details>
+
+    <details id="encodeurs">
+      <summary>Encodeurs vers Pi</summary>
+      <div class="details-body">
+        <p>Les encodeurs sont les seuls composants du système à ne pas passer par un bus. Cette exception se justifie par la nature de leur signal.</p>
+
+        <h3>L’information est une séquence, pas un état</h3>
+        <p>Le sens de rotation n’est inscrit nulle part dans le composant : il tient dans l’<strong>ordre d’arrivée</strong> des transitions des deux voies. Les quatre états se succèdent dans un cycle, et ce cycle s’inverse avec le sens.</p>
+
+<pre><code>horaire        00 → 10 → 11 → 01 → 00 → ...
+antihoraire    00 → 01 → 11 → 10 → 00 → ...</code></pre>
+
+        <p>Une transition manquée ne retarde donc pas l’information : elle la falsifie. Si le programme observe <code>00</code> puis <code>01</code> alors que le bouton est passé par <code>10</code> et <code>11</code>, le couple observé appartient à la liste antihoraire. Le décodeur compte un cran en arrière alors que le bouton en a avancé trois, sans aucun moyen de s’en apercevoir.</p>
+
+        <h3>Ce que chaque chemin garantit</h3>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th></th><th>GPIO direct</th><th>Via l’expandeur</th></tr></thead>
+            <tbody>
+              <tr><th>Détection</th><td>interruption, le matériel réveille le programme</td><td>scrutation, le programme doit interroger</td></tr>
+              <tr><th>Délai</th><td>quelques microsecondes</td><td>quelques centaines de microsecondes</td></tr>
+              <tr><th>Charge du bus I2C</th><td>nulle</td><td>permanente, en concurrence avec les écrans</td></tr>
+              <tr><th>Risque</th><td>négligeable</td><td>sens inversé, erreur cumulative</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Table de connexion</h3>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Encodeur</th><th>Voie A</th><th>Voie B</th><th>Commun</th></tr></thead>
+            <tbody>
+              <tr><td>ENC1 — instrument slot 1</td><td>GPIO 17, broche 11</td><td>GPIO 27, broche 13</td><td>masse</td></tr>
+              <tr><td>ENC2 — instrument slot 2</td><td>GPIO 22, broche 15</td><td>GPIO 23, broche 16</td><td>masse</td></tr>
+              <tr><td>ENC3 — poids du mélange</td><td>GPIO 24, broche 18</td><td>GPIO 25, broche 22</td><td>masse</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>La borne commune est celle du milieu sur le côté à trois broches. C’est le seul fil que les trois encodeurs partagent. Aucune résistance externe : les tirages internes du Pi sont activés par le logiciel.</p>
+
+        <h3>Vérification sans oscilloscope</h3>
+        <p>Compter des tours à la main est une mauvaise mesure : l’erreur humaine se confond avec l’erreur mesurée. Le décodeur peut détecter ses propres défaillances — depuis <code>00</code>, seuls <code>10</code> et <code>01</code> sont atteignables, donc un passage à <code>11</code> signale à coup sûr une transition manquée.</p>
+        <p>Il suffit d’ajouter un compteur de sauts impossibles, de tourner une minute dans tous les sens, et de lire le résultat. Aucun comptage, aucune discipline, et un chiffre défendable.</p>
+
+        <h3>Une formulation pour le rapport</h3>
+        <p>Les encodeurs sont câblés sur GPIO direct avec interruption, et non derrière l’expandeur I2C : leur information est une séquence de transitions, et une transition manquée inverse le sens plutôt que de le retarder. L’expandeur reste réservé aux entrées et sorties persistantes, pour lesquelles un retard de quelques millisecondes est sans effet.</p>
+      </div>
+    </details>
+
+    <details id="expandeur-led" class="todo">
+      <summary>Expandeur vers LED<span class="hint">fiche à régénérer</span></summary>
+      <div class="details-body">
+        <p>Dix LED vertes pilotées par le MCP23017, une résistance de 330 Ω par voie. L’index 0 est défini par la LED reliée à GPA0, pas par une position vue de l’extérieur.</p>
+
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Broche</th><th>Nom</th><th>Relié à</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td>GPB0</td><td>LED9 via 330 Ω</td></tr>
+              <tr><td>2</td><td>GPB1</td><td>LED8 via 330 Ω</td></tr>
+              <tr><td>21 à 28</td><td>GPA0 à GPA7</td><td>LED0 à LED7 via 330 Ω</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="status">À compléter : schéma électrique d’une voie, calculs de courant, budget par broche et par port, sélection de la couleur de LED.</p>
+      </div>
+    </details>
+
+    <details id="ecrans" class="todo">
+      <summary>Écrans OLED<span class="hint">fiche à écrire</span></summary>
+      <div class="details-body">
+        <p>Deux modules OLED 1,3 pouce en I2C, branchés en parallèle sur les mêmes lignes SDA et SCL que l’expandeur.</p>
+
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Module</th><th>Marquage</th><th>Adresse employée</th></tr></thead>
+            <tbody>
+              <tr><td>Slot 1</td><td>0x78</td><td>0x3C</td></tr>
+              <tr><td>Slot 2</td><td>0x7A</td><td>0x3D</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>Le marquage du module donne l’adresse sur huit bits ; les bibliothèques Python emploient la forme sur sept bits. Il n’existe que ces deux adresses : un troisième écran demandera un multiplexeur I2C.</p>
+
+        <p class="status">À compléter : contrôleur SH1106 et non SSD1306, conséquence sur le décalage de deux pixels, consommation, schéma de liaison.</p>
+      </div>
+    </details>
+
+  </div>
+</main>
+
+<footer>
+  Travaux d’étudiant, ISIB — cours de prototypage et d’interface homme-machine.
+</footer>
+
+</body>
+</html>

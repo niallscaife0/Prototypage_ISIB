@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Simulation — NSynth</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-home" href="index.html">NSynth — interface physique</a>
+    <a href="index.html">Accueil</a>
+    <a href="cablage.html">Câblage</a>
+    <a href="logiciel.html">Logiciel</a>
+    <a href="simulation.html" aria-current="page">Simulation</a>
+  </div>
+</nav>
+
+<main>
+  <h1>Simulation</h1>
+
+  <p class="lead">Manipuler l’interface dans le navigateur, sans rien installer. Deux choses très différentes sont présentées ici : ce qui existe déjà sur la table, et ce qui est proposé pour la suite.</p>
+
+  <div class="overview">
+    <h2>Vue d’ensemble</h2>
+
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th></th><th>Design actuel</th><th>Design proposé</th></tr></thead>
+        <tbody>
+          <tr><th>État</th><td>construit, sur breadboard</td><td>proposition, rien n’est fabriqué</td></tr>
+          <tr><th>Sources sonores</th><td>2</td><td>3</td></tr>
+          <tr><th>Sélection d’instrument</th><td>2 encodeurs</td><td>3 encodeurs</td></tr>
+          <tr><th>Réglage de la proportion</th><td>1 encodeur</td><td>1 joystick</td></tr>
+          <tr><th>Affichage de la proportion</th><td>10 LED en ligne</td><td>triangle plein de LED</td></tr>
+          <tr><th>Écrans</th><td>2</td><td>3</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Le changement n’est pas seulement un ajout d’instruments : c’est un <strong>changement de rôle</strong>. Dans le design proposé, les encodeurs ne servent plus du tout à la proportion. Ils ne font que sélectionner, et le joystick prend tout le réglage en un seul geste.</p>
+
+    <p>Une position dans un triangle a deux degrés de liberté, un joystick en a exactement deux. La correspondance est exacte.</p>
+  </div>
+
+  <h2>En détail</h2>
+
+  <div class="sections">
+
+    <details id="actuel" open>
+      <summary>Design actuel</summary>
+      <div class="details-body">
+        <p>Ce qui existe sur la breadboard. Tourne le bouton pour régler la proportion, et observe la rangée lumineuse.</p>
+
+        <p><a href="jauge-nsynth.html">Ouvrir en pleine page</a></p>
+        <iframe class="frame" src="jauge-nsynth.html" title="Banc d’essai du design actuel" loading="lazy"></iframe>
+
+        <h3>Ce que la version complète doit montrer</h3>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Élément</th><th>Comportement</th><th>État</th></tr></thead>
+            <tbody>
+              <tr><td>Un encodeur</td><td>régler la proportion</td><td>fait</td></tr>
+              <tr><td>Dix LED en ligne</td><td>la jauge qui se remplit</td><td>fait</td></tr>
+              <tr><td>Deux encodeurs</td><td>changer d’instrument, la liste reboucle</td><td>à ajouter</td></tr>
+              <tr><td>Deux OLED</td><td>le nom de l’instrument, un par slot</td><td>à ajouter</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="status">En attente : le son. On voit le comportement, on ne l’entend pas encore dans le navigateur.</p>
+      </div>
+    </details>
+
+    <details id="propose" class="todo">
+      <summary>Design proposé<span class="hint">à construire</span></summary>
+      <div class="details-body">
+        <p>Un triangle plein de LED, un joystick pour la position, trois écrans et trois encodeurs pour la sélection.</p>
+
+        <h3>Ce qu’il doit rendre manipulable</h3>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Élément</th><th>Comportement</th></tr></thead>
+            <tbody>
+              <tr><td>Joystick</td><td>déplacer la position dans le triangle</td></tr>
+              <tr><td>Triangle de LED</td><td>montrer où se situe le mélange, et les trois proportions</td></tr>
+              <tr><td>Trois OLED</td><td>le nom de chaque instrument</td></tr>
+              <tr><td>Trois encodeurs</td><td>changer les instruments</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Les trois bascules</h3>
+        <p>Ce qui fera de cette simulation un outil de décision plutôt qu’une illustration.</p>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Bascule</th><th>Question qu’elle tranche</th></tr></thead>
+            <tbody>
+              <tr><td>joystick ou trois encodeurs</td><td>quel geste pour la position</td></tr>
+              <tr><td>point ou dégradé</td><td>ce que le triangle de LED affiche</td></tr>
+              <tr><td>commande fine ou tout ou rien</td><td>ce que la commande apporte à la finesse</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Une conséquence à noter</h3>
+        <p>Le joystick a une position absolue : on voit où il est, on le ramène au centre d’un geste. L’encodeur, non.</p>
+        <p>Cela réduit en partie le besoin de retour visuel qui justifiait la rangée de LED. Le triangle reste utile pour la précision, mais il n’est plus la seule source d’information.</p>
+
+        <p class="status">Point à vérifier : le mode dégradé allume toutes les LED, contre quelques-unes pour le mode point. À confronter au budget de courant quand le triangle sera câblé.</p>
+      </div>
+    </details>
+
+    <details id="tranche" class="todo">
+      <summary>Ce que les essais ont tranché<span class="hint">à écrire</span></summary>
+      <div class="details-body">
+        <p>Les décisions sorties de ces manipulations, et la fonction du cahier des charges qu’elles satisfont.</p>
+
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Décision</th><th>Fonction</th><th>Comment elle a été prise</th></tr></thead>
+            <tbody>
+              <tr><td>Jauge remplie plutôt que point qui glisse</td><td>R1, R2</td><td>comparaison sur le banc</td></tr>
+              <tr><td>Gain en racine carrée</td><td>L4</td><td>le creux s’entend à la bascule</td></tr>
+              <tr><td>Course complète</td><td>M3</td><td>à régler sous les doigts</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="status">À compléter au fur et à mesure que les essais tranchent.</p>
+      </div>
+    </details>
+
+  </div>
+</main>
+
+<footer>
+  Travaux d’étudiant, ISIB — cours de prototypage et d’interface homme-machine.
+</footer>
+
+</body>
+</html>

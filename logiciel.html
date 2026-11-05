@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Logiciel — NSynth</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-home" href="index.html">NSynth — interface physique</a>
+    <a href="index.html">Accueil</a>
+    <a href="cablage.html">Câblage</a>
+    <a href="logiciel.html" aria-current="page">Logiciel</a>
+    <a href="simulation.html">Simulation</a>
+  </div>
+</nav>
+
+<main>
+  <h1>Logiciel</h1>
+
+  <p class="lead">Ce programme lit des gestes, les transforme en nombres, et fait réagir la lumière et le son. Pour le voir fonctionner plutôt que le lire, passez par la <a href="simulation.html">simulation</a>.</p>
+
+  <div class="overview">
+    <h2>Vue d’ensemble</h2>
+
+<pre><code>   Les commandes  ──►  L'objet Banc  ──►  La jauge et l'audio
+   écrivent l'état     crans, slots,      lisent l'état
+                       note, modes
+                            │
+                            ▼  calculées à la demande
+                     Valeurs dérivées  ──►  (vers les sorties)
+                     valeur, poids,
+                     gains, intensités
+                     jamais stockées</code></pre>
+
+    <p>Un seul objet détient l’état. Tout le reste l’écrit ou le lit, sans jamais se parler directement. Les deux sorties ne se connaissent pas : remplacer le clavier par des encodeurs ne touche qu’au côté gauche.</p>
+
+    <h3>L’état, ce qui est réellement stocké</h3>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Attribut</th><th>Ce qu’il retient</th></tr></thead>
+        <tbody>
+          <tr><td><code>crans</code></td><td>le compte brut, comme le ferait un encodeur</td></tr>
+          <tr><td><code>slots</code></td><td>les deux instruments en cours</td></tr>
+          <tr><td><code>slot_actif</code></td><td>celui que les commandes de sélection modifient</td></tr>
+          <tr><td><code>hauteur</code></td><td>la note jouée</td></tr>
+          <tr><td><code>puissance_constante</code></td><td>le mode de gain</td></tr>
+          <tr><td><code>en_marche</code></td><td>le son tourne ou non</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Six valeurs, et rien d’autre. La valeur normalisée, les poids, les gains et les intensités sont <strong>calculés à chaque lecture</strong>, jamais gardés : une valeur stockée peut se désynchroniser de ce dont elle dérive, une valeur recalculée ne peut jamais mentir.</p>
+  </div>
+
+  <h2>En détail</h2>
+
+  <div class="sections">
+
+    <details id="contrat">
+      <summary>Contrat d’information</summary>
+      <div class="details-body">
+        <p>Ce qui traverse chaque frontière, et rien de plus.</p>
+
+        <h3>Ce qui monte, du geste vers l’état</h3>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Information</th><th>Origine</th><th>Nature</th></tr></thead>
+            <tbody>
+              <tr><td>un cran de plus ou de moins</td><td>encodeur de poids</td><td>événement</td></tr>
+              <tr><td>slot visé</td><td>sélection</td><td>état, deux valeurs</td></tr>
+              <tr><td>instrument assigné</td><td>encodeurs de sélection</td><td>événement</td></tr>
+              <tr><td>démarrer ou arrêter</td><td>commande</td><td>bascule</td></tr>
+              <tr><td>note suivante ou précédente</td><td>commande</td><td>événement</td></tr>
+              <tr><td>mode de gain</td><td>commande</td><td>bascule</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Ce qui descend, de l’état vers les sorties</h3>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Information</th><th>Destination</th></tr></thead>
+            <tbody>
+              <tr><td>intensité de chaque LED</td><td>la rangée lumineuse</td></tr>
+              <tr><td>gain de chaque voie</td><td>les canaux audio</td></tr>
+              <tr><td>instruments des deux slots</td><td>les écrans</td></tr>
+              <tr><td>note et mode en cours</td><td>l’affichage d’état</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Ce qui ne traverse pas</h3>
+        <p>La jauge ne connaît pas les commandes. Les canaux audio ne connaissent pas la jauge. Aucune sortie ne sait d’où vient l’état qu’elle affiche.</p>
+        <p>C’est cette ignorance mutuelle qui permettra de remplacer le clavier par les encodeurs sans toucher au reste.</p>
+      </div>
+    </details>
+
+    <details id="bloc">
+      <summary>Schéma bloc</summary>
+      <div class="details-body">
+
+<pre><code>        clavier
+           │  codes de touches
+           ▼
+     ┌───────────┐
+     │  boucle   │  lit une commande, agit, redessine
+     └─────┬─────┘
+           │  appels de méthodes
+           ▼
+     ┌───────────┐
+     │   Banc    │  l'état : crans, slots, note, modes
+     └─────┬─────┘
+           │
+     ┌─────┴─────┬──────────────┐
+     ▼           ▼              ▼
+  index      dessiner       mélangeur
+  des sons   la jauge       audio
+     │           │              │
+     ▼           ▼              ▼
+  fichiers    affichage       casque</code></pre>
+
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Bloc</th><th>Rôle</th><th>Dépend de</th></tr></thead>
+            <tbody>
+              <tr><td><code>indexer</code></td><td>ranger les fichiers par instrument et hauteur</td><td>le système de fichiers</td></tr>
+              <tr><td><code>Banc</code></td><td>détenir l’état et calculer les valeurs dérivées</td><td>rien d’extérieur</td></tr>
+              <tr><td><code>dessiner</code></td><td>rendre la jauge et les diagnostics</td><td>l’affichage</td></tr>
+              <tr><td><code>boucle</code></td><td>lire une commande, agir, redessiner</td><td>l’affichage</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Le bloc qui ne touche à rien</h3>
+        <p><code>Banc</code> ne connaît ni l’affichage ni le système de fichiers. Il reçoit un index au départ et s’en sert, mais ne lit jamais un dossier lui-même. C’est ce qui permet de le tester sans terminal et sans carte son.</p>
+      </div>
+    </details>
+
+    <details id="logique">
+      <summary>Schéma logique</summary>
+      <div class="details-body">
+        <p>Ce qui doit rester vrai, quelle que soit la façon dont le code est écrit.</p>
+
+        <h3>La chaîne de transformation</h3>
+<pre><code>crans                    un compte, sans unité
+   │  ÷ course complète, puis écrêtage
+   ▼
+valeur                   une proportion, 0 à 1
+   │  répartition sur les voies
+   ▼
+poids                    des parts, somme = 1
+   │  racine carrée
+   ▼
+gains                    des facteurs d'amplitude</code></pre>
+
+        <p>Et en parallèle, depuis la même valeur : la position sur la jauge, puis l’intensité de chaque LED.</p>
+
+        <h3>Les règles toujours vraies</h3>
+        <ul>
+          <li><strong>G1</strong> — la somme des poids vaut 1</li>
+          <li><strong>G2</strong> — la somme des carrés des gains vaut 1, condition du niveau constant</li>
+          <li><strong>G3</strong> — un poids nul donne un gain nul</li>
+          <li><strong>G4</strong> — au plus une LED a une intensité intermédiaire</li>
+          <li><strong>G5</strong> — une LED d’indice inférieur est toujours supérieure ou égale à sa suivante</li>
+          <li><strong>G6</strong> — à l’arrêt, aucun canal n’émet</li>
+          <li><strong>G7</strong> — les crans peuvent sortir de la plage, la valeur jamais</li>
+        </ul>
+
+        <p>G2 est affichée en permanence sous le nom <strong>énergie</strong>. Elle doit valoir 1,00, et tombe à 0,50 au milieu de la course en mode naïf. C’est la règle rendue visible.</p>
+
+        <h3>Pourquoi la racine carrée</h3>
+        <p>Deux sons différents ne sont pas synchronisés : leurs amplitudes se retranchent par moments et s’ajoutent à d’autres. En moyenne, il ne reste que la somme des <strong>énergies</strong>, et l’énergie est le carré de l’amplitude.</p>
+        <p>Les poids se comportent donc comme des énergies, les gains comme des amplitudes. La racine carrée est le passage de l’un à l’autre. Sans elle, le niveau chute d’environ 3 dB au milieu de la course, précisément là où le réglage est le plus intéressant.</p>
+
+        <h3>Les paramètres</h3>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Paramètre</th><th>Nature</th></tr></thead>
+            <tbody>
+              <tr><td>fréquence d’échantillonnage</td><td>imposée par les fichiers</td></tr>
+              <tr><td>course complète, en crans</td><td>décision d’interface, à régler sous les doigts</td></tr>
+              <tr><td>nombre de LED</td><td>matériel</td></tr>
+              <tr><td>taille du tampon audio</td><td>arbitrage : court réduit le délai, long évite les coupures</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </details>
+
+    <details id="fonctionnel">
+      <summary>Schéma fonctionnel</summary>
+      <div class="details-body">
+        <p>Trois moments distincts, et c’est leur séparation qui importe : ce qui se fait une fois ne doit pas se refaire à chaque geste.</p>
+
+        <h3>Au démarrage, une fois</h3>
+<pre><code>indexer les fichiers par instrument et hauteur
+        │
+choisir les instruments et la note
+        │
+créer l'objet Banc
+        │
+entrer dans la boucle</code></pre>
+
+        <h3>À chaque geste sur le poids</h3>
+<pre><code>recevoir un cran
+        │
+l'ajouter au compte, écrêter
+        │
+normaliser les poids
+        │
+calculer la racine carrée de chaque poids
+        │
+envoyer un gain par voie, redessiner la jauge</code></pre>
+
+        <p>Aucun fichier n’est relu. Seuls les gains changent, et le changement est immédiat.</p>
+
+        <h3>Les trois coûts distincts</h3>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Action</th><th>Ce qu’elle touche</th><th>Coût</th></tr></thead>
+            <tbody>
+              <tr><td>bouger les crans</td><td>les volumes des canaux</td><td>immédiat</td></tr>
+              <tr><td>changer d’instrument</td><td>relit un fichier, relance le canal</td><td>lecture disque</td></tr>
+              <tr><td>changer de note</td><td>relit tous les fichiers</td><td>lecture disque</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>Séparer ces trois cas évite de relire le disque à chaque cran. Les confondre rendrait le réglage saccadé.</p>
+
+        <h3>À l’arrêt</h3>
+        <p>Couper toutes les voies, puis fermer la carte son. Sans cette étape, le son continue après la fin du programme : la sortie garde son dernier état, exactement comme une LED.</p>
+      </div>
+    </details>
+
+    <details id="moteur">
+      <summary>Le moteur audio</summary>
+      <div class="details-body">
+        <p>Le sous-système qui transforme un état d’interface en son. Il reçoit des instruments, des poids et une note ; il produit de l’audio. Il ne sait rien des encodeurs ni des LED.</p>
+
+        <h3>Le contrat</h3>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Sens</th><th>Information</th></tr></thead>
+            <tbody>
+              <tr><td>Entrant</td><td>les instruments choisis pour chaque slot</td></tr>
+              <tr><td>Entrant</td><td>les poids, un par slot, de somme 1</td></tr>
+              <tr><td>Entrant</td><td>la note à jouer</td></tr>
+              <tr><td>Sortant</td><td>du son</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>L’équation de sortie</h3>
+        <p>À chaque instant, chaque son est multiplié par son gain, et les résultats sont additionnés. Un seul nombre sort par instant : c’est ce qui fait qu’on entend un seul son et non plusieurs tenus séparés.</p>
+
+        <h3>Les deux sources possibles</h3>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th></th><th>Enregistrements réels</th><th>Timbres interpolés</th></tr></thead>
+            <tbody>
+              <tr><th>Repérage</th><td>par le nom du fichier</td><td>par calcul d’un index</td></tr>
+              <tr><th>Rendu à parts égales</th><td>deux instruments superposés</td><td>un timbre intermédiaire</td></tr>
+              <tr><th>Disponibilité</th><td>téléchargée</td><td>copie archivée, à confirmer</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>Une seule fonction change entre les deux : celle qui va chercher les échantillons. Elle reçoit un instrument et une note, elle rend un tableau. Sa manière de le trouver lui appartient.</p>
+      </div>
+    </details>
+
+    <details id="vers-materiel">
+      <summary>Vers le matériel</summary>
+      <div class="details-body">
+        <h3>Ce qui ne bougera pas</h3>
+        <p>L’objet <code>Banc</code> en entier : l’état, les valeurs dérivées, les règles, les gains. Il ne connaît déjà ni le clavier ni l’affichage.</p>
+        <p>La logique de jauge aussi : elle rend des réels entre 0 et 1, que l’affichage soit un caractère ou une LED.</p>
+
+        <h3>Ce qui changera</h3>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Aujourd’hui</th><th>Demain</th></tr></thead>
+            <tbody>
+              <tr><td>une touche fait <code>bouger(1)</code></td><td>un cran d’encodeur fait <code>bouger(1)</code></td></tr>
+              <tr><td>la boucle attend une touche</td><td>la boucle ne doit plus attendre</td></tr>
+              <tr><td>la jauge s’écrit en caractères</td><td>une fonction écrit sur les LED</td></tr>
+              <tr><td>la sélection se fait par numéro</td><td>deux encodeurs parcourent une liste</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>La première ligne est la plus parlante : <strong>l’appel est déjà le bon</strong>. <code>bouger(1)</code> est exactement ce qu’un encodeur produira.</p>
+
+        <h3>Le seul vrai travail restant</h3>
+        <p>Supprimer l’attente. La boucle actuelle bloque sur une touche ; il faudra qu’elle tourne en continu, lise ce qui a changé, et redessine. C’est le passage de la scrutation au traitement d’événements.</p>
+
+        <h3>La méthode retenue</h3>
+        <p>Une commande à la fois. On branche le composant, on le fait marcher, puis on supprime la touche correspondante. Le test est intégré : si la touche peut disparaître sans rien perdre, le composant fait le travail.</p>
+      </div>
+    </details>
+
+  </div>
+</main>
+
+<footer>
+  Travaux d’étudiant, ISIB — cours de prototypage et d’interface homme-machine.
+</footer>
+
+</body>
+</html>

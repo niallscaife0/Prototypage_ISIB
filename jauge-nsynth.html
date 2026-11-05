@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Jauge NSynth — banc d’essai</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --panel: #d9d6cf;
+    --panel-edge: #b9b5ab;
+    --surface: #efece6;
+    --ink: #1d1c1a;
+    --ink-quiet: #6a6760;
+    --rule: #c3bfb5;
+    --lamp: 42 92% 54%;
+    --lamp-off: #c8c4ba;
+    --knob-a: #f6f4f0;
+    --knob-b: #c6c1b7;
+    --knurl: #a8a298;
+    --bushing: #b5b0a5;
+    --board: #c9a97c;
+    --board-hole: #9a7f55;
+    --pkg: #f4f2ec;
+    --pkg-edge: #cbc6b9;
+    --phosphor: #e7d59a;
+    --focus: #2f6f6a;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      color-scheme: dark;
+      --panel: #26282b;
+      --panel-edge: #3a3d41;
+      --surface: #17181a;
+      --ink: #eceae6;
+      --ink-quiet: #9a968e;
+      --rule: #3a3d41;
+      --lamp-off: #35383c;
+      --knob-a: #5a5e64;
+      --knob-b: #2e3135;
+      --knurl: #70747a;
+      --bushing: #4b4e53;
+      --board: #7b6444;
+      --board-hole: #4d3c27;
+      --pkg: #ddd9d0;
+      --pkg-edge: #a8a396;
+      --phosphor: #c0af7d;
+      --focus: #7fd6cc;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --panel: #26282b;
+    --panel-edge: #3a3d41;
+    --surface: #17181a;
+    --ink: #eceae6;
+    --ink-quiet: #9a968e;
+    --rule: #3a3d41;
+    --lamp-off: #35383c;
+    --knob-a: #5a5e64;
+    --knob-b: #2e3135;
+    --knurl: #70747a;
+    --bushing: #4b4e53;
+    --board: #7b6444;
+    --board-hole: #4d3c27;
+    --pkg: #ddd9d0;
+    --pkg-edge: #a8a396;
+    --phosphor: #c0af7d;
+    --focus: #7fd6cc;
+  }
+
+  *, *::before, *::after { box-sizing: inherit; }
+  html { -webkit-text-size-adjust: 100%; scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body {
+    margin: 0;
+    background: var(--surface);
+    color: var(--ink);
+    font-family: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 44rem; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+
+  header { margin-bottom: 1.75rem; }
+  h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 0.35rem; }
+  .sub { color: var(--ink-quiet); margin: 0; max-width: 38rem; font-size: 0.95rem; }
+
+  /* ---- le panneau : la pièce maîtresse ---- */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--panel-edge);
+    border-radius: 14px;
+    padding: 1.75rem 1.5rem 1.5rem;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1.75rem;
+    align-items: center;
+  }
+  @media (max-width: 34rem) {
+    .panel { grid-template-columns: 1fr; justify-items: center; gap: 1.5rem; }
+  }
+
+  .knob-zone { display: grid; justify-items: center; gap: 0.6rem; }
+
+  .knob-mount { position: relative; width: 120px; height: 120px; }
+
+  /* l’écrou de fixation : il ne tourne pas */
+  .bushing {
+    position: absolute; inset: 6px;
+    border-radius: 50%;
+    background: var(--bushing);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 1px 2px rgba(0,0,0,0.22);
+  }
+
+  .knob {
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    border: 0;
+    padding: 0;
+    cursor: grab;
+    touch-action: none;
+    /* flancs moletés */
+    background:
+      repeating-conic-gradient(var(--knurl) 0deg 2.2deg, transparent 2.2deg 4.4deg),
+      radial-gradient(circle at 50% 50%, var(--knob-b), var(--knurl) 94%);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.26);
+  }
+  .knob:active { cursor: grabbing; }
+  .knob:focus-visible { outline: 2px solid var(--focus); outline-offset: 5px; }
+
+  /* la face supérieure, en aluminium tourné */
+  .knob-face {
+    position: absolute; inset: 11px;
+    border-radius: 50%;
+    background:
+      repeating-conic-gradient(from 0deg, rgba(255,255,255,0.10) 0deg 3deg, rgba(0,0,0,0.045) 3deg 6deg),
+      radial-gradient(circle at 38% 30%, var(--knob-a), var(--knob-b) 86%);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12);
+  }
+  /* le repère gravé */
+  .knob::after {
+    content: "";
+    position: absolute;
+    left: 50%; top: 16px;
+    width: 3px; height: 24px;
+    margin-left: -1.5px;
+    border-radius: 2px;
+    background: var(--ink);
+    opacity: 0.62;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.3);
+  }
+  .caption { font-size: 0.8rem; color: var(--ink-quiet); }
+
+  /* ---- la rangée de LED ---- */
+  .strip { display: grid; gap: 1rem; width: 100%; }
+  /* la plaque à trous, pas de 2,54 mm */
+  .leds {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 18px 14px;
+    border: 1px solid var(--board-hole);
+    border-radius: 4px;
+    background-color: var(--board);
+    background-image: radial-gradient(circle at center, var(--board-hole) 0 1.5px, transparent 1.6px);
+    background-size: 11px 11px;
+    background-position: 5px 5px;
+    box-shadow: inset 0 0 14px rgba(0,0,0,0.16);
+  }
+
+  /* un boîtier 3528 PLCC-2 : corps blanc, cavité optique, coin biseauté */
+  .led {
+    flex: 1 1 0;
+    aspect-ratio: 35 / 28;
+    position: relative;
+    background: var(--pkg);
+    border: 1px solid var(--pkg-edge);
+    border-radius: 1.5px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  }
+  /* le biseau de polarité, côté cathode */
+  .led::before {
+    content: "";
+    position: absolute; left: -1px; top: -1px;
+    width: 30%; aspect-ratio: 1;
+    background: var(--pkg-edge);
+    clip-path: polygon(0 0, 100% 0, 0 100%);
+  }
+  /* le phosphore, jaune pâle à l’arrêt */
+  .led::after {
+    content: "";
+    position: absolute; left: 50%; top: 50%;
+    width: 56%; aspect-ratio: 1;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: var(--phosphor);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.14);
+  }
+  /* l’émission */
+  .led i {
+    position: absolute; left: 50%; top: 50%;
+    width: 56%; aspect-ratio: 1;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: hsl(var(--lamp));
+    opacity: 0;
+    z-index: 1;
+  }
+
+  .readout {
+    display: flex; flex-wrap: wrap; gap: 0 1.5rem;
+    font-size: 0.85rem; color: var(--ink-quiet);
+  }
+  .readout b { font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  /* ---- réglages ---- */
+  .settings { margin-top: 1.75rem; display: grid; gap: 1.1rem; }
+  .row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.6rem 0.9rem; }
+  .row > span { min-width: 11rem; font-size: 0.9rem; }
+  .row small { color: var(--ink-quiet); font-size: 0.82rem; flex-basis: 100%; margin-top: -0.2rem; }
+
+  .seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 7px; overflow: hidden; }
+  .seg button {
+    font: inherit; font-size: 0.86rem;
+    padding: 0.3rem 0.75rem;
+    background: transparent; color: var(--ink-quiet);
+    border: 0; border-left: 1px solid var(--rule);
+    cursor: pointer;
+  }
+  .seg button:first-child { border-left: 0; }
+  .seg button[aria-pressed="true"] { background: var(--panel); color: var(--ink); font-weight: 500; }
+  .seg button:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+
+  .note {
+    margin-top: 2.25rem; padding-top: 1.25rem;
+    border-top: 1px solid var(--rule);
+    color: var(--ink-quiet); font-size: 0.9rem;
+  }
+  .note p { margin: 0 0 0.7rem; max-width: 38rem; }
+  .note p:last-child { margin-bottom: 0; }
+  .note b { color: var(--ink); font-weight: 500; }
+
+  /* ---- menu du site ---- */
+  body::before { content:""; position:fixed; inset:0 0 auto; height:env(safe-area-inset-top,0px); background:var(--panel); z-index:10; }
+  .nav { position:sticky; top:env(safe-area-inset-top,0px); z-index:9; background:var(--panel); border-bottom:1px solid var(--panel-edge); }
+  .nav-inner { max-width:46rem; margin:0 auto; padding:0.65rem 1.25rem; display:flex; flex-wrap:wrap; align-items:baseline; gap:0.4rem 1.25rem; }
+  .nav-home { font-weight:700; font-size:0.95rem; color:var(--ink); text-decoration:none; margin-right:auto; }
+  .nav a { color:var(--ink-quiet); text-decoration:none; font-size:0.9rem; border-bottom:1px solid transparent; padding-bottom:1px; }
+  .nav a:hover { color:var(--ink); border-bottom-color:var(--rule); }
+  .nav a[aria-current="page"] { color:var(--ink); border-bottom-color:var(--focus); }
+  .nav a:focus-visible { outline:2px solid var(--focus); outline-offset:3px; }
+  .wrap { padding-top: 2rem; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header>
+    <h1>Jauge NSynth — banc d’essai</h1>
+    <p class="sub">Tourne le bouton pour régler le poids d’un son. Le bouton n’a ni butée ni position : toute l’information passe par la lumière.</p>
+  </header>
+
+  <div class="panel">
+    <div class="knob-zone">
+      <div class="knob-mount">
+        <span class="bushing" aria-hidden="true"></span>
+        <button class="knob" id="knob" aria-label="Encodeur rotatif, 24 crans par tour"
+                role="slider" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="knob-face"></span></button>
+      </div>
+      <span class="caption">glisse, ou flèches du clavier</span>
+    </div>
+
+    <div class="strip">
+      <div class="leds" id="leds"></div>
+      <div class="readout">
+        <span>crans <b id="r-steps">0</b></span>
+        <span>valeur <b id="r-valeur">0,00</b></span>
+        <span>position <b id="r-position">0,00</b></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings">
+    <div class="row">
+      <span>Course complète</span>
+      <div class="seg" id="seg-echelle" role="group" aria-label="Crans pour aller de 0 à 100 %">
+        <button data-v="24">1 tour</button>
+        <button data-v="48" aria-pressed="true">2 tours</button>
+        <button data-v="96">4 tours</button>
+      </div>
+      <small>Décision d’interface, pas de calcul : à régler sous les doigts.</small>
+    </div>
+
+    <div class="row">
+      <span>Affichage</span>
+      <div class="seg" id="seg-mode" role="group" aria-label="Forme de l’affichage">
+        <button data-v="jauge" aria-pressed="true">jauge remplie</button>
+        <button data-v="point">point qui glisse</button>
+      </div>
+      <small>La jauge montre une quantité, le point montre une position.</small>
+    </div>
+
+    <div class="row">
+      <span>Commande des LED</span>
+      <div class="seg" id="seg-pwm" role="group" aria-label="Type de commande">
+        <button data-v="pwm" aria-pressed="true">PWM</button>
+        <button data-v="binaire">tout ou rien</button>
+      </div>
+      <small>Sans PWM, dix LED font dix niveaux et la progression saute.</small>
+    </div>
+  </div>
+
+  <div class="note">
+    <p>Le calcul est celui du programme Python, à l’identique : les crans sont divisés par la course, la valeur est <b>écrêtée</b> entre 0 et 1, puis répartie sur dix sorties.</p>
+    <p>Trois choses se vérifient ici avant toute soudure : la course qui tombe juste sous les doigts, la forme d’affichage à retenir, et ce que le PWM apporte réellement à la finesse perçue.</p>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var N_LEDS = 10;
+  var CRANS_PAR_TOUR = 24;
+  var DETENT = 360 / CRANS_PAR_TOUR;
+
+  var crans = 0;
+  var echelle = 48;
+  var mode = "jauge";
+  var pwm = true;
+
+  var elLeds = document.getElementById("leds");
+  var elKnob = document.getElementById("knob");
+  var rSteps = document.getElementById("r-steps");
+  var rValeur = document.getElementById("r-valeur");
+  var rPosition = document.getElementById("r-position");
+
+  var lampes = [];
+  for (var i = 0; i < N_LEDS; i++) {
+    var d = document.createElement("div");
+    d.className = "led";
+    var inner = document.createElement("i");
+    d.appendChild(inner);
+    elLeds.appendChild(d);
+    lampes.push(inner);
+  }
+
+  function valeur() {
+    var v = crans / echelle;
+    if (v < 0) v = 0;
+    if (v > 1) v = 1;
+    return v;
+  }
+
+  function intensites(v) {
+    var out = [];
+    var k, inten, distance, position;
+
+    if (mode === "jauge") {
+      position = v * N_LEDS;
+      for (k = 0; k < N_LEDS; k++) {
+        if (k < position - 1) inten = 1;
+        else if (k < position) inten = position - k;
+        else inten = 0;
+        out.push(inten);
+      }
+    } else {
+      position = v * (N_LEDS - 1);
+      for (k = 0; k < N_LEDS; k++) {
+        distance = Math.abs(k - position);
+        inten = 1 - distance;
+        if (inten < 0) inten = 0;
+        out.push(inten);
+      }
+    }
+
+    if (!pwm) {
+      for (k = 0; k < N_LEDS; k++) out[k] = out[k] >= 0.5 ? 1 : 0;
+    }
+    return out;
+  }
+
+  function fr(x, n) {
+    return x.toFixed(n).replace(".", ",");
+  }
+
+  function dessiner() {
+    var v = valeur();
+    var position = mode === "jauge" ? v * N_LEDS : v * (N_LEDS - 1);
+    var vals = intensites(v);
+
+    for (var k = 0; k < N_LEDS; k++) {
+      var a = vals[k];
+      lampes[k].style.opacity = a;
+      lampes[k].style.boxShadow =
+        a > 0.04
+          ? "0 0 " + (5 + 13 * a).toFixed(1) + "px " + (1 + 3 * a).toFixed(1) + "px hsl(var(--lamp) / " + (0.5 * a).toFixed(2) + ")"
+          : "none";
+    }
+
+    elKnob.style.transform = "rotate(" + crans * DETENT + "deg)";
+    rSteps.textContent = crans;
+    rValeur.textContent = fr(v, 2);
+    rPosition.textContent = fr(position, 2);
+    elKnob.setAttribute("aria-valuenow", Math.round(v * 100));
+    elKnob.setAttribute("aria-valuetext", Math.round(v * 100) + " %");
+  }
+
+  function bouger(n) {
+    crans += n;
+    if (crans < -4) crans = -4;
+    if (crans > echelle + 4) crans = echelle + 4;
+    dessiner();
+  }
+
+  /* --- rotation à la souris ou au doigt --- */
+  var actif = false, angleRef = 0, reste = 0;
+
+  function angleDe(ev) {
+    var r = elKnob.getBoundingClientRect();
+    var dx = ev.clientX - (r.left + r.width / 2);
+    var dy = ev.clientY - (r.top + r.height / 2);
+    return Math.atan2(dy, dx) * 180 / Math.PI;
+  }
+
+  elKnob.addEventListener("pointerdown", function (ev) {
+    actif = true;
+    reste = 0;
+    angleRef = angleDe(ev);
+    elKnob.setPointerCapture(ev.pointerId);
+    ev.preventDefault();
+  });
+
+  elKnob.addEventListener("pointermove", function (ev) {
+    if (!actif) return;
+    var a = angleDe(ev);
+    var d = a - angleRef;
+    while (d > 180) d -= 360;
+    while (d < -180) d += 360;
+    angleRef = a;
+    reste += d;
+    while (reste >= DETENT) { reste -= DETENT; bouger(1); }
+    while (reste <= -DETENT) { reste += DETENT; bouger(-1); }
+  });
+
+  function relacher(ev) {
+    if (!actif) return;
+    actif = false;
+    try { elKnob.releasePointerCapture(ev.pointerId); } catch (e) {}
+  }
+  elKnob.addEventListener("pointerup", relacher);
+  elKnob.addEventListener("pointercancel", relacher);
+
+  elKnob.addEventListener("wheel", function (ev) {
+    ev.preventDefault();
+    bouger(ev.deltaY < 0 ? 1 : -1);
+  }, { passive: false });
+
+  elKnob.addEventListener("keydown", function (ev) {
+    var k = ev.key;
+    if (k === "ArrowUp" || k === "ArrowRight") { bouger(1); ev.preventDefault(); }
+    else if (k === "ArrowDown" || k === "ArrowLeft") { bouger(-1); ev.preventDefault(); }
+    else if (k === "Home") { crans = 0; dessiner(); ev.preventDefault(); }
+    else if (k === "End") { crans = echelle; dessiner(); ev.preventDefault(); }
+  });
+
+  /* --- réglages --- */
+  function brancher(id, action) {
+    var groupe = document.getElementById(id);
+    groupe.addEventListener("click", function (ev) {
+      var b = ev.target.closest("button");
+      if (!b) return;
+      var boutons = groupe.querySelectorAll("button");
+      for (var j = 0; j < boutons.length; j++) boutons[j].removeAttribute("aria-pressed");
+      b.setAttribute("aria-pressed", "true");
+      action(b.getAttribute("data-v"));
+      dessiner();
+    });
+  }
+
+  brancher("seg-echelle", function (v) {
+    var ancienne = valeur();
+    echelle = parseInt(v, 10);
+    crans = Math.round(ancienne * echelle);
+  });
+  brancher("seg-mode", function (v) { mode = v; });
+  brancher("seg-pwm", function (v) { pwm = (v === "pwm"); });
+
+  dessiner();
+})();
+</script>
+</body>
+</html>

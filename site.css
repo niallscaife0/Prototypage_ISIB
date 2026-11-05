@@ -1,0 +1,241 @@
+/* Site de projets — feuille commune
+   Chaque page charge ce fichier : <link rel="stylesheet" href="site.css"> */
+
+:root {
+  color-scheme: light;
+  --panel: #d9d6cf;
+  --panel-edge: #b9b5ab;
+  --surface: #efece6;
+  --ink: #1d1c1a;
+  --ink-quiet: #6a6760;
+  --rule: #c3bfb5;
+  --focus: #2f6f6a;
+  --accent: #2f6f6a;
+  --warn: #9a5b2a;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --panel: #26282b;
+    --panel-edge: #3a3d41;
+    --surface: #17181a;
+    --ink: #eceae6;
+    --ink-quiet: #9a968e;
+    --rule: #3a3d41;
+    --focus: #7fd6cc;
+    --accent: #7fd6cc;
+    --warn: #d9a36a;
+  }
+}
+
+*, *::before, *::after { box-sizing: inherit; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-padding-top: calc(4rem + env(safe-area-inset-top, 0px));
+}
+
+body {
+  margin: 0;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto;
+  height: env(safe-area-inset-top, 0px);
+  background: var(--panel);
+  z-index: 10;
+}
+
+/* ---- les onglets ---- */
+.nav {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 9;
+  background: var(--panel);
+  border-bottom: 1px solid var(--panel-edge);
+}
+.nav-inner {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 0.7rem 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem 1.4rem;
+}
+.nav-home {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--ink);
+  text-decoration: none;
+  margin-right: auto;
+}
+.nav a {
+  color: var(--ink-quiet);
+  text-decoration: none;
+  font-size: 0.92rem;
+  border-bottom: 2px solid transparent;
+  padding-bottom: 2px;
+}
+.nav a:hover { color: var(--ink); border-bottom-color: var(--rule); }
+.nav a[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent); font-weight: 500; }
+.nav a:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+
+/* ---- corps ---- */
+main { max-width: 48rem; margin: 0 auto; padding: 2.25rem 1.25rem 5rem; }
+
+h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 0.6rem; }
+h2 { font-size: 1.1rem; font-weight: 700; margin: 2.5rem 0 0.7rem; }
+h3 { font-size: 0.98rem; font-weight: 500; margin: 1.6rem 0 0.4rem; }
+p { margin: 0 0 1rem; max-width: 42rem; }
+
+/* la phrase d'ouverture */
+.lead {
+  font-size: 1.08rem;
+  line-height: 1.55;
+  color: var(--ink);
+  max-width: 42rem;
+  margin: 0 0 2rem;
+}
+
+a { color: var(--ink); text-decoration-color: var(--rule); text-underline-offset: 3px; }
+a:hover { text-decoration-color: var(--accent); }
+
+ul, ol { max-width: 42rem; padding-left: 1.3rem; margin: 0 0 1rem; }
+li { margin-bottom: 0.3rem; }
+
+code {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  background: var(--panel);
+  padding: 0.1em 0.35em;
+  border-radius: 3px;
+}
+
+pre {
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+  border-radius: 8px;
+  padding: 1.1rem 1.25rem;
+  overflow-x: auto;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+pre code { background: none; padding: 0; font-size: inherit; }
+
+.table-scroll { overflow-x: auto; margin: 0 0 1.25rem; }
+table { border-collapse: collapse; font-size: 0.9rem; min-width: 30rem; }
+th, td {
+  text-align: left; vertical-align: top;
+  padding: 0.5rem 0.9rem 0.5rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+th { font-weight: 500; color: var(--ink-quiet); }
+
+/* ---- la vue d'ensemble, toujours visible ---- */
+.overview {
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+  border-radius: 12px;
+  padding: 1.5rem 1.5rem 1.25rem;
+  margin: 0 0 2.5rem;
+}
+.overview h2 { margin-top: 0; }
+.overview > :last-child { margin-bottom: 0; }
+
+/* ---- les sections dépliables ---- */
+.sections { margin-top: 1rem; }
+
+details {
+  border: 1px solid var(--panel-edge);
+  border-radius: 10px;
+  margin-bottom: 0.75rem;
+  background: var(--surface);
+}
+details[open] { border-color: var(--accent); }
+
+summary {
+  cursor: pointer;
+  padding: 0.85rem 1.1rem;
+  font-weight: 500;
+  list-style: none;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+summary::-webkit-details-marker { display: none; }
+summary::before {
+  content: "▸";
+  color: var(--ink-quiet);
+  font-size: 0.85em;
+  transition: transform 0.15s;
+  display: inline-block;
+}
+details[open] > summary::before { transform: rotate(90deg); }
+summary:hover { color: var(--accent); }
+summary:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+
+summary .hint {
+  margin-left: auto;
+  font-weight: 400;
+  font-size: 0.82rem;
+  color: var(--ink-quiet);
+}
+
+.details-body {
+  padding: 0.25rem 1.1rem 1.1rem;
+  border-top: 1px solid var(--rule);
+  margin-top: 0.2rem;
+}
+.details-body > :first-child { margin-top: 0.9rem; }
+.details-body > :last-child { margin-bottom: 0; }
+
+/* une section pas encore écrite */
+.todo summary { color: var(--ink-quiet); }
+.todo summary .hint { color: var(--warn); }
+
+/* ---- portes de l'accueil ---- */
+.doors { display: grid; gap: 0.9rem; margin: 2rem 0 0; padding: 0; list-style: none; max-width: 42rem; }
+.door {
+  display: block;
+  padding: 1.1rem 1.25rem;
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+  border-radius: 10px;
+  text-decoration: none;
+  color: var(--ink);
+}
+.door:hover { border-color: var(--accent); }
+.door:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+.door b { display: block; font-weight: 700; margin-bottom: 0.2rem; }
+.door span { color: var(--ink-quiet); font-size: 0.9rem; }
+
+.status { color: var(--ink-quiet); font-size: 0.88rem; }
+
+.frame {
+  width: 100%;
+  height: 40rem;
+  border: 1px solid var(--panel-edge);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+footer {
+  max-width: 48rem; margin: 0 auto;
+  padding: 1.25rem 1.25rem 3rem;
+  color: var(--ink-quiet); font-size: 0.85rem;
+  border-top: 1px solid var(--rule);
+}
